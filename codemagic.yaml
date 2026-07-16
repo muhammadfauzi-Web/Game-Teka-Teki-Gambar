@@ -26,17 +26,10 @@ workflows:
       - name: Setup and Build Android App
         script: |
           set -e
-          cordova create lokasi_build com.game.tekatekigambar "Teka-Teki Gambar"
-          cp config.xml lokasi_build/config.xml
-          rm -rf lokasi_build/www
-          cp -R www lokasi_build/www
+          npm init -y
+          cordova platform add android@13.0.0
           
-          # Masuk ke direktori build untuk eksekusi platform
-          cd lokasi_build
-          npm install cordova-android@13.0.0 --no-save
-          cordova platform add android --nosave
-          
-          # Jalankan build rilis di dalam direktori lokasi_build
+          # Jalankan proses build aplikasi
           cordova build android --release -- --packageType=apk
 
     artifacts:
@@ -50,3 +43,4 @@ workflows:
         notify:
           success: true
           failure: true
+          
