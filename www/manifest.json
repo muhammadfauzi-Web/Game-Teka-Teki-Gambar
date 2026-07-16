@@ -1,0 +1,25 @@
+{
+  "name": "Teka-Teki Gambar",
+  "short_name": "TEKA-TEKI GAMBAR",
+  "description": "Game teka-teki gambar. Klik, seret, dan gabungkan objek untuk memecahkan 20 level.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1D1832",
+  "theme_color": "#1D1832",
+  "icons": [
+    {
+      "src": "www/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "www/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

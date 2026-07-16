@@ -1,1 +1,0 @@
-# Game-Teka-Teki-Gambar

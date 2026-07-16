@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>TEKA-TEKI GAMBAR — Puzzle Teka-Teki</title>
+<meta name="description" content="Game teka-teki Gambar mengasah untuk mengasah otak. Klik, seret, dan gabungkan objek untuk memecahkan 20 level yang menjebak otakmu.">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="manifest" href="manifest.json">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="cordova.js"></script>
+
+<style>
+  :root{
+    --void: #FFFFFF;
+    --panel: #FFFFFF;
+    --ink: #16121F;
+    --cream: #FFF8EC;
+    --coral: #FF6B57;
+    --yellow: #FFC93C;
+    --mint: #3FD9A8;
+    --sky: #6FA9FF;
+  }
+
+  *{ -webkit-tap-highlight-color: transparent; }
+  html,body{ height:100%; overscroll-behavior:none; }
+  body{
+    margin:0;
+    font-family:'Nunito',sans-serif;
+    background: var(--void);
+    color:var(--ink);
+    min-height:100dvh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    touch-action: manipulation;
+  }
+  .font-display{ font-family:'Baloo 2', sans-serif; }
+
+  #console-frame{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    height: 100dvh;
+    background:var(--panel);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  
+  #topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:16px 20px;
+    background:var(--panel);
+  }
+  
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #level-badge{
+    background:var(--yellow);
+    color:var(--ink);
+    padding:7px 22px;
+    border-radius:999px;
+    font-size:16px;
+    font-weight: 800;
+    letter-spacing:.02em;
+  }
+
+  #stage-wrap{
+    position:relative;
+    width:100%;
+    flex: 1;
+    overflow:hidden;
+  }
+  
+  #wrong-mark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 120px;
+    z-index: 400;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  #wrong-mark.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+
+  #stage{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+  }
+
+  .game-el {
+    position:absolute;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:min(9vw, 40px);
+    line-height:1;
+    user-select:none;
+    touch-action:none;
+    cursor:pointer;
+    transition: opacity .25s ease, transform .18s ease;
+    will-change: left, top;
+    transform-origin: center center;
+    will-change: transform, opacity;
+  }
+  .game-el svg{ width:100%; height:100%; display:block; }
+  .game-el.draggable{ cursor:grab; }
+  .game-el.dragging{ cursor:grabbing; z-index:999 !important; filter:drop-shadow(3px 6px 4px rgba(0,0,0,.35)); transform:scale(1.06); }
+  .hidden-el{ opacity:0; pointer-events:none; transform:scale(.6); }
+  .el-label{
+    position:absolute;
+    bottom:-16%;
+    font-family:'Baloo 2',sans-serif;
+    font-size:11px;
+    background:var(--ink);
+    color:var(--cream);
+    padding:1px 6px;
+    border-radius:6px;
+  }
+
+  @keyframes shakeWrong{
+    0%,100%{ transform:translateX(0) rotate(0); }
+    20%{ transform:translateX(-6px) rotate(-6deg); }
+    40%{ transform:translateX(6px) rotate(6deg); }
+    60%{ transform:translateX(-4px) rotate(-4deg); }
+    80%{ transform:translateX(4px) rotate(4deg); }
+  }
+  .shake{ animation: shakeWrong .4s ease; }
+
+  @keyframes popIn{
+    0%{ transform:scale(.3) rotate(-8deg); opacity:0; }
+    70%{ transform:scale(1.15) rotate(4deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0); }
+  }
+  .pop{ animation: popIn .45s cubic-bezier(.34,1.56,.64,1); }
+
+  .angkat {
+    animation: efekAngkat 0.5s ease-in-out;
+  }
+  @keyframes efekAngkat {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-20%) scale(1.05); }
+    100% { transform: translateY(0); }
+  }
+
+  .goyang {
+    animation: efekGoyang 0.5s ease-in-out;
+  }
+  @keyframes efekGoyang {
+    0%, 100% { transform: rotate(0deg); }
+    25%      { transform: rotate(-3deg); }
+    75%      { transform: rotate(3deg); }
+  }
+
+  .buka {
+    animation: efekBuka 0.45s ease-out;
+  }
+  @keyframes efekBuka {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  .sibak {
+    animation: efekSibak 1s ease-in-out forwards;
+  }
+  @keyframes efekSibak {
+    0%   { transform: translateX(0); opacity: 1; }
+    100%  { transform: translateX(30%); opacity: 0; }
+  }
+
+  .pecah {
+    animation: efekPecah 0.4s ease-out;
+  }
+  @keyframes efekPecah {
+    0%   { transform: scale(1); filter: brightness(1); }
+    50%  { transform: scale(0.92); filter: brightness(1.5); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+
+  .qbox{
+    position:absolute;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:var(--ink);
+    font-family:'Nunito',sans-serif;
+    font-weight:700;
+    font-size:clamp(16px, 5vw, 20px);
+    line-height:1.4;
+    padding:8px 16px;
+    z-index:50;
+    height: auto !important; 
+  }
+  .qbox::after, .qbox::before{ display:none; }
+  
+  .qbox-draggable{
+    cursor: grab;
+    touch-action: none;
+    background: #FFFFFF; 
+  }
+  .tampil-garis {
+  border: 2px dashed #bbb;
+  border-radius: 12px;
+}
+  
+  .qbox-draggable .grab-hint{
+    position:absolute;
+    right:-8px; top:-10px;
+    background:var(--coral);
+    color:var(--cream);
+    border:2px solid var(--ink);
+    border-radius:999px;
+    width:26px;height:26px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;
+  }
+  .qbox.dragging{ opacity: 0.8; }
+
+  #hint-bar{
+    padding:10px 16px 24px;
+    text-align:center;
+    font-size:14px;
+    font-weight:600;
+    color:#888888;
+    background:#FFFFFF;
+  }
+
+  #toast{
+    position:absolute;
+    left:50%; top:auto;
+    transform:translate(-50%,-200%) scale(0);
+    background:var(--ink);
+    color:#FFFFFF;
+    font-size:13px;
+    font-weight:800;
+    padding:8px 16px;
+    border-radius:999px;
+    z-index:200;
+    transition: transform .5s cubic-bezier(.34,1.56,.64,1);
+    white-space:nowrap;
+    max-width:70%;
+    overflow:hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    text-overflow:ellipsis;
+  }
+  #toast.show{ transform:translate(-50%,0); }
+
+  .overlay-screen{
+    position:absolute; inset:0;
+    background:rgba(255, 255, 255, 0.95);
+    z-index:300;
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+  }
+  .hidden{ display:none !important; }
+
+  .level-tile{
+    width: 50%;
+    padding: 10px 0;
+    border-radius: 10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    border:2px solid var(--ink);
+    box-shadow:2px 2px 0 var(--ink);
+    cursor:pointer;
+    margin-bottom: 8px;
+  }
+  .level-tile.locked{
+    background:#EEEEEE;
+    color:#AAAAAA;
+    cursor:not-allowed;
+    box-shadow:none;
+    border-color:#DDDDDD;
+  }
+  .level-tile.unlocked{ background:var(--yellow); color:var(--ink); }
+  .level-tile.done{ background:var(--mint); color:var(--ink); }
+
+  #screen-win .win-card{
+    animation: popIn .5s cubic-bezier(.34,1.56,.64,1);
+    border: 3px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+
+  ::-webkit-scrollbar{ width:6px; }
+  ::-webkit-scrollbar-thumb{ background:#DDDDDD; border-radius:99px; }
+  
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    background: transparent !important;
+  }
+
+  #console-frame {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+#topbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-bottom: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  padding-top: calc(20px + env(safe-area-inset-top)) !important; 
+  padding-bottom: 10px !important;
+  z-index: 200 !important;
+  position: relative !important;
+}
+
+
+  #topbar .icon-btn,
+  #btn-back,
+  #btn-restart {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  #level-badge {
+    text-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+    #stage-wrap {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  #stage {
+  width: 100% !important;
+  max-height: 100% !important;
+  aspect-ratio: 9 / 16 !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  position: relative !important;
+}
+
+
+
+  #btn-hint {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+  }
+
+  #wrong-mark, #toast {
+    z-index: 300 !important;
+  }
+
+  #hint-bar {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-top: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding-top: 8px !important;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    z-index: 200 !important;
+    position: relative !important;
+    text-shadow: 0 1px 4px rgba(255,255,255,0.6);
+  }
+
+  #screen-win {
+    background: rgba(0, 0, 0, 0) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  #screen-menu {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+    #toast {
+    position: fixed !important;
+    bottom: calc(40px + env(safe-area-inset-bottom)) !important; 
+    left: 50% !important;
+    transform: translateX(-50%) translateY(15px) !important; 
+    max-width: 92% !important;
+    min-width: 280px !important;
+    padding: 10px 20px !important;
+    box-sizing: border-box !important;
+    background: rgba(10, 10, 20, 0.92) !important;
+    color: #ffffff !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.25) !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s cubic-bezier(0.17, 0.67, 0.32, 0.99) !important;
+    z-index: 350 !important;
+    pointer-events: none !important;
+  }
+
+
+  #toast.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateX(-50%) translateY(0) !important;
+  }
+
+  #btn-sound {
+    font-size: 22px !important;
+    padding: 6px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    user-select: none !important;
+  }
+
+  #level-badge {
+  position: absolute !important;
+  left: 50% !important;
+  top: calc(50% + (env(safe-area-inset-top) / 2)) !important; 
+transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+
+  #topbar > div:last-child {
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+  }
+
+  #btn-hint {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: auto !important;
+    padding: 4px 6px !important;
+  }
+</style>
+</head>
+<body>
+
+<div id="console-frame">
+
+  <header id="topbar">
+    <div id="btn-back" class="icon-btn" title="Kembali ke menu">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+    </div>
+    <button id="btn-hint" class="icon-btn" title="Petunjuk Bantuan"> 
+      <span style="font-size: 25px;">💡</span>
+      <span style="font-size: 10px; color: #ff9800; font-weight: 800; letter-spacing: 0.5px;">ADS</span>
+    </button>
+    <div id="level-badge" class="font-display">Level <span id="level-num">1</span></div>
+    
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <div id="btn-sound" class="icon-btn" title="Atur Suara">🔊</div>
+      <div id="btn-restart" class="icon-btn" title="Ulangi level">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2v6h-6"></path>
+          <path d="M3 12a9 9 0 1 0 2.81-6.63L9 8"></path>
+        </svg>
+      </div>
+    </div>
+  </header>
+  
+  <div id="stage-wrap">
+    <div id="stage"></div>
+    <div id="wrong-mark">❌</div>
+    <div id="toast"></div>
+
+    <div id="screen-menu" class="overlay-screen">
+      <div class="p-5 flex flex-col h-full">
+        <div class="text-center mb-6 mt-6">
+          <div class="text-5xl mb-2">🧠</div>
+          <h1 class="font-display text-3xl font-800" style="color:var(--ink)">TEKA-TEKI GAMBAR</h1>
+          <p class="text-sm mt-1" style="color:#666">Ketuk, seret, gabungkan — pecahkan teka-teki!</p>
+        </div>
+        
+        <div id="level-grid" class="flex flex-col items-center mt-2 flex-1 overflow-y-auto pb-4 px-2"></div>
+        
+        <button id="btn-reset-progress" class="font-display mt-3 text-sm py-3 rounded-xl btn-pop" style="background:var(--coral); color:#FFF; font-weight:700; border:2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);">Hapus Progres</button>
+      </div>
+    </div>
+
+    <div id="screen-win" class="overlay-screen hidden" style="background:rgba(255,255,255,0.9); align-items:center; justify-content:center;">
+      <div class="win-card rounded-3xl p-6 text-center" style="background:#FFF; color:var(--ink); width:82%;">
+        <div class="text-5xl mb-2" id="win-emoji">🎉</div>
+        <h2 class="font-display text-2xl font-800 mb-1">Hebat!</h2>
+        <p class="text-sm mb-5" style="color:#666">Kamu berhasil memecahkan teka-tekinya.</p>
+        <div class="flex gap-3">
+          <button id="btn-menu-from-win" class="font-display flex-1 py-3 rounded-xl btn-pop text-sm" style="background:var(--sky); color:var(--ink); font-weight:700; border:2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);">Menu</button>
+          <button id="btn-next-level" class="font-display flex-1 py-3 rounded-xl btn-pop text-sm" style="background:var(--mint); color:var(--ink); font-weight:700; border:2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);">Lanjut ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hint-bar">Memuat teka-teki...</div>
+</div>
+
+<!-- Data level di-embed sebagai variabel JS (window.__LEVELS_DATA__) agar bisa
+     dibaca tanpa fetch()/CORS saat game dibuka langsung lewat file://.
+     Isinya di-generate otomatis dari levels.json lewat "node scripts/build.js". -->
+<script src="levels-data.js"></script>
+<script src="game.js"></script>
+<script>
+  // Service Worker butuh konteks aman (http/https), tidak tersedia di file://.
+  // Pengecekan 'serviceWorker' in navigator sudah otomatis bernilai false pada
+  // kasus itu, jadi blok ini aman dijalankan di semua mode tanpa error.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((err) => {
+        console.warn('Registrasi Service Worker gagal (game tetap bisa dimainkan):', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
