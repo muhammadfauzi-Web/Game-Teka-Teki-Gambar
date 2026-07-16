@@ -28,6 +28,7 @@ workflows:
           set -e
           npm init -y
           cordova platform add android@13.0.0
+          sdkmanager "build-tools;34.0.0"
           
           # Jalankan proses build aplikasi
           cordova build android --release -- --packageType=apk
