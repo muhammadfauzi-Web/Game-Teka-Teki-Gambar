@@ -28,7 +28,6 @@ workflows:
           set -e
           npm init -y
           cordova platform add android@13.0.0
-          sdkmanager "build-tools;34.0.0"
           mkdir -p platforms/android/app/
           cp build-extras.gradle platforms/android/app/build-extras.gradle
           
