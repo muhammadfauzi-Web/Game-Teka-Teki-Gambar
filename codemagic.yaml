@@ -1,23 +1,52 @@
 workflows:
-  android-cordova-build:
-    name: Teka-Teki Gambar Android Build
-    instance_type: mac_mini_m1
+  teka-teki-gambar-android:
+    name: Teka-Teki Gambar - Android Build
     max_build_duration: 30
+    instance_type: mac_mini_m1
     environment:
-      node: latest
+      vars:
+        PACKAGE_ID: "com.game.tekatekigambar"
+      node: 20
+      java: 17
+      android_signing:
+        - Muhammad Fauzi
     triggering:
       events:
-        - push
-      branch_patterns:
-        - pattern: main
+        - tag
+      tag_patterns:
+        - pattern: "v*.*.*"
+          include: true
+      cancel_previous_builds: false
+
     scripts:
-      - name: Install Cordova 
+      - name: Install Cordova CLI
         script: |
-          npm install -g cordova
-      - name: Build Android APK
+          npm install -g cordova@13.0.0
+
+      - name: Setup and Build Android App
         script: |
-          cordova platform add android
-          cordova build android
+          set -e
+          cordova create lokasi_build com.game.tekatekigambar "Teka-Teki Gambar"
+          cp config.xml lokasi_build/config.xml
+          rm -rf lokasi_build/www
+          cp -R www lokasi_build/www
+          
+          # Masuk ke direktori build untuk eksekusi platform
+          cd lokasi_build
+          npm install cordova-android@13.0.0 --no-save
+          cordova platform add android --nosave
+          
+          # Jalankan build rilis di dalam direktori lokasi_build
+          cordova build android --release -- --packageType=apk
+
     artifacts:
-      - 'platforms/android/app/build/outputs/apk/**/*.apk'
-      
+      - '**/build/outputs/apk/release/*.aab'
+      - '**/build/outputs/apk/release/*.apk'
+
+    publishing:
+      email:
+        recipients:
+          - muhammadfauziarrasyid@gmail.com
+        notify:
+          success: true
+          failure: true
