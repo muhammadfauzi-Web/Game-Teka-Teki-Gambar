@@ -35,8 +35,8 @@ workflows:
 
     artifacts:
       - 'platforms/android/app/build/outputs/apk/debug/*.apk'
-
-      publishing:
+      
+    publishing:
       email:
         recipients:
           - muhammadfauziarrasyid@gmail.com
