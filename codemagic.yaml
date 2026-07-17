@@ -30,6 +30,11 @@ workflows:
       - name: Setup and Build Android App (Debug Mode)
         script: |
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          
+          # MENGUSIR HANTU: Hapus jejak plugin lama yang mungkin tersimpan
+          rm -rf package.json package-lock.json plugins/ platforms/ node_modules/
+          
+          # Mulai merakit dari awal murni berdasarkan config.xml
           cordova platform add android@13.0.0
           cordova build android --debug
 
