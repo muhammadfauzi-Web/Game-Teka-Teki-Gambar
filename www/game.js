@@ -724,34 +724,56 @@ document.getElementById('btn-hint').addEventListener('click', (e) => {
 });
 
 async function putarIklanReward() {
+  if (typeof admob === 'undefined') {
+    showToast("Fitur iklan hanya berjalan di Aplikasi Android.");
+    return;
+  }
+
   showToast("Memuat iklan petunjuk...");
   state.locked = true;
 
   try {
-    await AdMob.prepareRewardedAd({
-      adId: 'ca-app-pub-3940256099942544/5224354917' // 👈 Ini ID Demo Google AdMob Android
+    
+    const rewarded = new admob.RewardedAd({
+      adUnitId: 'ca-app-pub-3940256099942544/5224354917'
     });
 
-    const rewardListener = await AdMob.addListener('rewardedAdUserEarnedReward', (reward) => {
-      state.locked = false;
+    const onReward = () => {
       state.hintUnlocked = true;
       berikanHadiahHint();
-      rewardListener.remove(); 
-    });
-    
-    const closeListener = await AdMob.addListener('rewardedAdDismissed', () => {
-      state.locked = false; 
-      rewardListener.remove();
-      closeListener.remove();
-    });
-    await AdMob.showRewardedAd();
+      document.removeEventListener('admob.rewarded.reward', onReward);
+    };
+    document.addEventListener('admob.rewarded.reward', onReward);
+
+    const onDismiss = () => {
+      state.locked = false;
+      document.removeEventListener('admob.rewarded.dismiss', onDismiss);
+      document.removeEventListener('admob.rewarded.reward', onReward);
+    };
+    document.addEventListener('admob.rewarded.dismiss', onDismiss);
+
+    await rewarded.load();
+    await rewarded.show();
 
   } catch (error) {
     console.error("AdMob Error:", error);
-    showToast("Gagal memuat iklan. Coba beberapa saat lagi.");
+    showToast("Gagal memuat iklan. Periksa koneksi internet Anda.");
     state.locked = false;
   }
 }
+
+
+document.addEventListener('deviceready', async () => {
+  try {
+    if (typeof admob !== 'undefined') {
+      await admob.start();
+      console.log('AdMob SDK berhasil dimulai');
+    }
+  } catch (e) {
+    console.error('Gagal memulai AdMob:', e);
+  }
+}, false);
+
 
 
 function berikanHadiahHint() {
