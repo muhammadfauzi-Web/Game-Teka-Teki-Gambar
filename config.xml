@@ -35,7 +35,7 @@
         
         <allow-intent href="market:*" />
         <preference name="android-minSdkVersion" value="23" />
-        <preference name="android-targetSdkVersion" value="36" />
+        <preference name="android-targetSdkVersion" value="34" />
         <preference name="KeepRunning" value="true" />
         <preference name="AndroidWindowSplashScreenBackground" value="#4ECDC4" />
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/icon-512.png" />
