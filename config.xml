@@ -15,7 +15,7 @@
 
     <preference name="Orientation" value="portrait" />
     <plugin name="cordova-plugin-screen-orientation" />
-    <plugin name="cordova-plugin-admob-plus">
+    <plugin name="admob-plus-cordova">
         <variable name="APP_ID_ANDROID" value="ca-app-pub-6360985134697901~6204309636" />
     </plugin>
     
