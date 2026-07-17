@@ -4,51 +4,27 @@ workflows:
     max_build_duration: 30
     instance_type: mac_mini_m1
     environment:
-      vars:
-        PACKAGE_ID: "com.game.tekatekigambar"
-        ANDROID_HOME: /usr/local/share/android-sdk
-        ANDROID_SDK_ROOT: /usr/local/share/android-sdk
       node: 20
       java: 17
-      android_signing:
-        - Muhammad Fauzi
     triggering:
       events:
-        - tag
-      tag_patterns:
-        - pattern: "v*.*.*"
-          include: true
-      cancel_previous_builds: false
+        - push
+      branch_patterns:
+        - pattern: main
+      cancel_previous_builds: true
 
     scripts:
-      - name: Install Android Build Tools 34.0.0
-        script: |
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install "cmdline-tools;latest" "platform-tools"
-          sdkmanager --install "platforms;android-34" "platforms;android-36"
-          sdkmanager --install "build-tools;34.0.0" "build-tools;33.0.0"
-          ls "$ANDROID_HOME/build-tools/"
-
       - name: Install Cordova CLI
         script: |
           npm install -g cordova@13.0.0
 
-      - name: Setup and Build Android App
+      - name: Setup and Build Android App (Debug Mode)
         script: |
-          set -e
-          npm init -y
-          cordova platform remove android --nosave 2>/dev/null || true
-          rm -rf platforms/android .gradle 2>/dev/null || true
-          ./gradlew --stop 2>/dev/null || true
           cordova platform add android@13.0.0
-          mkdir -p platforms/android/app/
-          cp build-extras.gradle platforms/android/app/build-extras.gradle
-          cordova build android --release -- --packageType=apk
+          cordova build android --debug
 
     artifacts:
-      - '**/apk/release/*.apk'
-      - '**/bundle/release/*.aab'
+      - 'platforms/android/app/build/outputs/apk/debug/*.apk'
 
     publishing:
       email:
@@ -57,4 +33,3 @@ workflows:
         notify:
           success: true
           failure: false
-          
